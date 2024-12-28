@@ -6,19 +6,24 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/go-xlan/redis-go-suo/internal/utils"
 	"github.com/go-xlan/redis-go-suo/redissuo"
 	"github.com/go-xlan/redis-go-suo/redissuorun"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"github.com/yyle88/must"
+	"github.com/yyle88/rese"
 )
 
 var caseRds redis.UniversalClient
 
 func TestMain(m *testing.M) {
+	rdm := rese.P1(miniredis.Run())
+	defer rdm.Close()
+
 	redisUc := redis.NewUniversalClient(&redis.UniversalOptions{
-		Addrs:        []string{"127.0.0.1:6379"},
+		Addrs:        []string{rdm.Addr()}, //[]string{"127.0.0.1:6379"},
 		PoolSize:     10,
 		MinIdleConns: 10,
 	})
