@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-xlan/redissuo"
-	"github.com/go-xlan/redissuo/internal/utils"
+	"github.com/go-xlan/redis-go-suo/internal/utils"
+	"github.com/go-xlan/redis-go-suo/redissuo"
 	"github.com/yyle88/erero"
 	"github.com/yyle88/zaplog"
 	"go.uber.org/zap"

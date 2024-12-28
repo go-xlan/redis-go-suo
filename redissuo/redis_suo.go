@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-xlan/redissuo/internal/utils"
+	"github.com/go-xlan/redis-go-suo/internal/utils"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 	"github.com/yyle88/erero"

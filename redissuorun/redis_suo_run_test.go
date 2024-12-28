@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-xlan/redissuo"
-	"github.com/go-xlan/redissuo/internal/utils"
-	"github.com/go-xlan/redissuo/redissuorun"
+	"github.com/go-xlan/redis-go-suo/internal/utils"
+	"github.com/go-xlan/redis-go-suo/redissuo"
+	"github.com/go-xlan/redis-go-suo/redissuorun"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"github.com/yyle88/must"

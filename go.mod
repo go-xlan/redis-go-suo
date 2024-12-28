@@ -1,4 +1,4 @@
-module github.com/go-xlan/redissuo
+module github.com/go-xlan/redis-go-suo
 
 go 1.22.8
 
