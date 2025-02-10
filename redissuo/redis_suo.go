@@ -41,7 +41,7 @@ end`
 func (o *Suo) acquire(ctx context.Context, value string) (bool, error) {
 	must.OK(value)
 
-	LOG := zaplog.ZAP.SubLog3("申请锁", zap.String("k", o.key), zap.String("v", value))
+	LOG := zaplog.ZAP.SubModuleLog("申请锁", zap.String("k", o.key), zap.String("v", value))
 
 	pxMs := o.pxd.Milliseconds() // 设置过期时间，时间取毫秒数，因为 PX 接受的是毫秒数
 
@@ -86,7 +86,7 @@ end`
 func (o *Suo) release(ctx context.Context, value string) (bool, error) {
 	must.OK(value)
 
-	LOG := zaplog.ZAP.SubLog3("释放锁", zap.String("k", o.key), zap.String("v", value))
+	LOG := zaplog.ZAP.SubModuleLog("释放锁", zap.String("k", o.key), zap.String("v", value))
 
 	resp, err := o.rds.Eval(ctx, commandRelease, []string{o.key}, []string{value}).Result()
 	if err != nil {
