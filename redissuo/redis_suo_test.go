@@ -40,7 +40,7 @@ func TestSuoAcquire(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, xin)
 
-	t.Log(time.Until(xin.Exp()))
+	t.Log(time.Until(xin.Expire()))
 
 	success, err := suo.Release(ctx, xin)
 	require.NoError(t, err)
@@ -105,6 +105,33 @@ func TestSuoReleaseTimeout(t *testing.T) {
 	require.NotNil(t, xin)
 
 	time.Sleep(duration)
+
+	success, err := suo.Release(ctx, xin)
+	require.Nil(t, err)
+	require.True(t, success)
+}
+
+func TestSuo_AcquireAgainExtendLock(t *testing.T) {
+	ctx := context.Background()
+
+	duration := 100 * time.Millisecond
+
+	suo := redissuo.NewSuo(caseRds, utils.NewUUID(), duration)
+	xin, err := suo.Acquire(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, xin)
+
+	time.Sleep(duration * 1 / 3)
+
+	t.Log(xin.SessionUUID(), time.Until(xin.Expire()))
+
+	xin, err = suo.AcquireAgainExtendLock(ctx, xin)
+	require.NoError(t, err)
+	require.NotNil(t, xin)
+
+	t.Log(xin.SessionUUID(), time.Until(xin.Expire()))
+
+	time.Sleep(duration * 1 / 3)
 
 	success, err := suo.Release(ctx, xin)
 	require.Nil(t, err)

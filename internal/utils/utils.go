@@ -7,6 +7,6 @@ import (
 )
 
 func NewUUID() string {
-	uux := uuid.New()
-	return hex.EncodeToString(uux[:])
+	newUUID := uuid.New()
+	return hex.EncodeToString(newUUID[:])
 }

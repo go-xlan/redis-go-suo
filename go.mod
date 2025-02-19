@@ -8,9 +8,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/stretchr/testify v1.10.0
-	github.com/yyle88/erero v1.0.17
+	github.com/yyle88/erero v1.0.18
 	github.com/yyle88/must v0.0.13
-	github.com/yyle88/rese v0.0.2
+	github.com/yyle88/rese v0.0.3
 	github.com/yyle88/zaplog v0.0.19
 	go.uber.org/zap v1.27.0
 )

@@ -16,16 +16,16 @@ import (
 )
 
 type Suo struct {
-	rds redis.UniversalClient
-	key string
-	pxd time.Duration
+	redisClient redis.UniversalClient
+	key         string
+	ttl         time.Duration
 }
 
-func NewSuo(rds redis.UniversalClient, key string, pxd time.Duration) *Suo {
+func NewSuo(rds redis.UniversalClient, key string, ttl time.Duration) *Suo {
 	return &Suo{
-		rds: must.Nice(rds),
-		key: must.Nice(key),
-		pxd: must.Nice(pxd),
+		redisClient: must.Nice(rds),
+		key:         must.Nice(key),
+		ttl:         must.Nice(ttl),
 	}
 }
 
@@ -43,9 +43,9 @@ func (o *Suo) acquire(ctx context.Context, value string) (bool, error) {
 
 	LOG := zaplog.ZAP.SubModuleLog("申请锁", zap.String("k", o.key), zap.String("v", value))
 
-	pxMs := o.pxd.Milliseconds() // 设置过期时间，时间取毫秒数，因为 PX 接受的是毫秒数
+	mst := o.ttl.Milliseconds() // 设置过期时间，在 redis 里 px 含义是 milliseconds to expire，时间取毫秒数，因为 PX 接受的是毫秒数
 
-	resp, err := o.rds.Eval(ctx, commandAcquire, []string{o.key}, []string{value, strconv.FormatInt(pxMs, 10)}).Result()
+	resp, err := o.redisClient.Eval(ctx, commandAcquire, []string{o.key}, []string{value, strconv.FormatInt(mst, 10)}).Result()
 	if errors.Is(err, redis.Nil) {
 		LOG.Debug("锁已经被占用-申请不到-请等待释放")
 		return false, nil
@@ -88,7 +88,7 @@ func (o *Suo) release(ctx context.Context, value string) (bool, error) {
 
 	LOG := zaplog.ZAP.SubModuleLog("释放锁", zap.String("k", o.key), zap.String("v", value))
 
-	resp, err := o.rds.Eval(ctx, commandRelease, []string{o.key}, []string{value}).Result()
+	resp, err := o.redisClient.Eval(ctx, commandRelease, []string{o.key}, []string{value}).Result()
 	if err != nil {
 		LOG.Error("请求报错", zap.Error(err))
 		return false, erero.Wro(err)
@@ -122,53 +122,53 @@ func (o *Suo) release(ctx context.Context, value string) (bool, error) {
 }
 
 type Xin struct {
-	key string
-	uus string    //当前锁的会话信息
-	exp time.Time //最保守的过期时间
+	key         string
+	sessionUUID string    //当前锁的会话信息
+	expire      time.Time //最保守的过期时间
 }
 
-func (s *Xin) Uus() string {
-	return s.uus
+func (s *Xin) SessionUUID() string {
+	return s.sessionUUID
 }
 
-func (s *Xin) Exp() time.Time {
-	return s.exp
+func (s *Xin) Expire() time.Time {
+	return s.expire
 }
 
-func (o *Suo) AcquireLockWithSession(ctx context.Context, uus string) (*Xin, error) {
+func (o *Suo) AcquireLockWithSession(ctx context.Context, sessionUUID string) (*Xin, error) {
 	//记住申请锁的起始时间
-	var stm = time.Now()
+	var startTime = time.Now()
 	//使用此会话信息获取锁
-	if ok, err := o.acquire(ctx, uus); err != nil {
+	if ok, err := o.acquire(ctx, sessionUUID); err != nil {
 		return nil, erero.Wro(err)
 	} else if !ok {
 		return nil, nil
 	} else {
 		now := time.Now() //需要让这个值在前面，以确保时间的保守
-		cos := time.Since(stm)
-		remain := o.pxd - cos     //配置的生存期减去去申请锁消耗的时间
-		expire := now.Add(remain) //得到保守估计的锁的过期时间
-		return &Xin{key: o.key, uus: uus, exp: expire}, nil
+		timeSpent := time.Since(startTime)
+		remain := o.ttl - timeSpent //配置的生存期减去去申请锁消耗的时间
+		expire := now.Add(remain)   //得到保守估计的锁的过期时间
+		return &Xin{key: o.key, sessionUUID: sessionUUID, expire: expire}, nil
 	}
 }
 
 func (o *Suo) Acquire(ctx context.Context) (*Xin, error) {
 	//使用完全随机的信号量
-	var uus = utils.NewUUID()
+	var sessionUUID = utils.NewUUID()
 	//使用此信号量申请新锁
-	return o.AcquireLockWithSession(ctx, uus)
+	return o.AcquireLockWithSession(ctx, sessionUUID)
 }
 
 func (o *Suo) Release(ctx context.Context, xin *Xin) (bool, error) {
 	//需要用相同的信息去释放锁，否则就不能释放
 	must.Equals(xin.key, o.key)
 	//使用此会话信息释放锁
-	return o.release(ctx, xin.uus)
+	return o.release(ctx, xin.sessionUUID)
 }
 
-func (o *Suo) AcquireAgainNewSession(ctx context.Context, xin *Xin) (*Xin, error) {
+func (o *Suo) AcquireAgainExtendLock(ctx context.Context, xin *Xin) (*Xin, error) {
 	//需要用相同的信息再次申请，否则就不能延期
 	must.Equals(xin.key, o.key)
 	//使用相同的信息再去申请锁，就能把原来的锁延期，得到新的会话信息
-	return o.AcquireLockWithSession(ctx, xin.uus)
+	return o.AcquireLockWithSession(ctx, xin.sessionUUID)
 }
