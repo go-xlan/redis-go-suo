@@ -1,7 +1,7 @@
 [![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/go-xlan/redis-go-suo/release.yml?branch=main&label=BUILD)](https://github.com/go-xlan/redis-go-suo/actions/workflows/release.yml?query=branch%3Amain)
 [![GoDoc](https://pkg.go.dev/badge/github.com/go-xlan/redis-go-suo)](https://pkg.go.dev/github.com/go-xlan/redis-go-suo)
 [![Coverage Status](https://img.shields.io/coveralls/github/go-xlan/redis-go-suo/main.svg)](https://coveralls.io/github/go-xlan/redis-go-suo?branch=main)
-[![Supported Go Versions](https://img.shields.io/badge/Go-1.22--1.25-lightgrey.svg)](https://go.dev/)
+[![Supported Go Versions](https://img.shields.io/badge/Go-1.22--1.25-lightgrey.svg)](https://github.com/go-xlan/redis-go-suo)
 [![GitHub Release](https://img.shields.io/github/release/go-xlan/redis-go-suo.svg)](https://github.com/go-xlan/redis-go-suo/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/go-xlan/redis-go-suo)](https://goreportcard.com/report/github.com/go-xlan/redis-go-suo)
 
@@ -19,12 +19,11 @@
 
 ## 核心特性
 
-🔐 **原子锁操作**: 基于 Lua 脚本的锁获取和释放，防止竞态条件  
-⚡ **智能会话管理**: 基于 UUID 的会话跟踪和所有权验证  
-🔄 **自动重复机制**: 内置重复逻辑，支持渐进退避策略应对高竞争场景  
-🛡️ **生命周期管理**: 保证锁清理，支持 panic 还原和超时处理  
-📊 **灵活日志系统**: 可插拔日志接口，支持自定义实现  
-🎯 **双层架构设计**: 核心锁操作 (`redissuo`) 和高端包装 (`redissuorun`)
+🔐 **原子锁操作**: 基于 Lua 脚本的锁获取和释放，防止竞态条件
+⚡ **智能会话管理**: 基于 UUID 的会话跟踪和所有权验证
+🔄 **自动重复机制**: 内置重复逻辑，支持渐进退避策略应对高竞争场景
+🛡️ **生命周期管理**: 保证锁清理，支持 panic 处理和超时管理
+📊 **灵活日志系统**: 可插拔日志接口，支持自定义实现
 
 ## 安装
 
@@ -52,17 +51,17 @@ import (
 
 func main() {
 	// Start Redis instance to show demo
-	mrd := rese.P1(miniredis.Run())
-	defer mrd.Close()
+	miniRedis := rese.P1(miniredis.Run())
+	defer miniRedis.Close()
 
 	// Setup Redis connection
-	rdb := redis.NewClient(&redis.Options{
-		Addr: mrd.Addr(),
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: miniRedis.Addr(),
 	})
-	defer rese.F0(rdb.Close)
+	defer rese.F0(redisClient.Close)
 
 	// Init shared lock
-	lock := redissuo.NewSuo(rdb, "demo-lock", time.Minute*5)
+	lock := redissuo.NewSuo(redisClient, "demo-lock", time.Minute*5)
 
 	// Get lock
 	ctx := context.Background()
@@ -71,7 +70,7 @@ func main() {
 		panic(err)
 	}
 	if session == nil {
-		fmt.Println("Lock taken - used in different app")
+		fmt.Println("Lock taken - used in different process")
 		return
 	}
 
@@ -89,16 +88,16 @@ func main() {
 	}
 
 	if success {
-		fmt.Println("Lock freed!")
+		fmt.Println("Lock released!")
 	} else {
-		fmt.Println("Lock free failed - might be freed via timeout in different session")
+		fmt.Println("Lock release failed - might be released via timeout in different session")
 	}
 }
 ```
 
 ⬆️ **源码:** [源码](internal/demos/demo1x/main.go)
 
-### 高端包装用法
+### 高端接口用法
 
 ```go
 package main
@@ -117,19 +116,19 @@ import (
 
 func main() {
 	// Start Redis instance to show demo
-	mrd := rese.P1(miniredis.Run())
-	defer mrd.Close()
+	miniRedis := rese.P1(miniredis.Run())
+	defer miniRedis.Close()
 
 	// Setup Redis connection
-	rdb := redis.NewClient(&redis.Options{
-		Addr: mrd.Addr(),
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: miniRedis.Addr(),
 	})
-	defer rese.F0(rdb.Close)
+	defer rese.F0(redisClient.Close)
 
 	// Init shared lock
-	lock := redissuo.NewSuo(rdb, "app-lock", time.Minute*2)
+	lock := redissuo.NewSuo(redisClient, "app-lock", time.Minute*2)
 
-	fmt.Println("Beginning top-grade lock action...")
+	fmt.Println("Beginning high-level lock operation...")
 
 	// Run function with auto lock handling
 	err := redissuorun.SuoLockRun(context.Background(), lock, func(ctx context.Context) error {
@@ -169,11 +168,11 @@ func main() {
 
 ### redissuorun 包
 
-提供生命周期管理的高端包装：
+提供生命周期管理的高端接口：
 
 - **`SuoLockRun`**: 在锁边界内执行函数，支持自动重复
 - **`SuoLockXqt`**: 支持自定义日志记录器的扩展版本
-- **Panic 还原**: 自动 panic 处理和锁清理
+- **Panic 处理**: 自动 panic 处理和锁清理
 - **上下文管理**: 超时和取消支持
 
 ## 高级功能
@@ -262,7 +261,7 @@ redis-go-suo/
 ├── redissuo/           # 核心锁实现
 │   ├── redis_suo.go    # 主要锁操作
 │   └── redis_suo_test.go
-├── redissuorun/        # 高端包装
+├── redissuorun/        # 高端接口
 │   ├── redis_suo_run.go # 生命周期管理
 │   └── redis_suo_run_test.go
 └── internal/           # 内部工具
@@ -308,8 +307,8 @@ err := redissuorun.SuoLockXqt(ctx, lock, businessFunc, retryInterval, customLogg
 
 **处理锁获取超时:**
 ```go
-ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-defer cancel()
+ctx, can := context.WithTimeout(context.Background(), time.Second*10)
+defer can()
 
 session, err := lock.Acquire(ctx)
 if err != nil {

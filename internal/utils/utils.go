@@ -1,7 +1,7 @@
-// Package utils: Shared utilities to generate UUID and perform common operations
-// Provides hex-encoded UUID generation to support secure session identification
-// Supports distributed lock session management with secure identifiers
-// Lightweight utilities to handle project infrastructure needs
+// Package utils: Shared utilities for UUID generation and common operations
+// Provides hex-encoded UUID generation supporting secure session identification
+// Supports distributed lock session management with cryptographically secure identifiers
+// Lightweight utilities handling internal project infrastructure needs
 //
 // utils: 在生成 UUID 和执行通用操作时的内部工具函数
 // 在安全会话标识期间提供十六进制编码 UUID 生成
@@ -15,10 +15,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// NewUUID generates a secure UUID encoded as hex string
-// Creates random UUID v4 and converts to hex string to support consistent session identification
-// Returns 32-byte hex string suitable when managing distributed lock sessions
-// Guarantees uniqueness across distributed systems to support lock ownership verification
+// NewUUID generates a cryptographically secure UUID encoded as hex string
+// Creates random UUID v4 and converts to hex string for consistent session identification
+// Returns 32-byte hex string suitable for distributed lock session management
+// Guarantees uniqueness across distributed systems enabling lock ownership verification
 //
 // NewUUID 生成编码为十六进制字符串的加密安全 UUID
 // 在一致会话标识期间创建随机 UUID v4 并转换为十六进制字符串
@@ -28,7 +28,7 @@ func NewUUID() string {
 	// Generate new random UUID v4
 	// 生成新的随机 UUID v4
 	newUUID := uuid.New()
-	// Convert UUID bytes to hex string to support consistent representation
+	// Convert UUID bytes to hex string for consistent representation
 	// 在一致表示期间将 UUID 字节转换为十六进制字符串
 	return hex.EncodeToString(newUUID[:])
 }

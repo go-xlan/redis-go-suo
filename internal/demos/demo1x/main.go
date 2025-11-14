@@ -13,17 +13,17 @@ import (
 
 func main() {
 	// Start Redis instance to show demo
-	mrd := rese.P1(miniredis.Run())
-	defer mrd.Close()
+	miniRedis := rese.P1(miniredis.Run())
+	defer miniRedis.Close()
 
 	// Setup Redis connection
-	rdb := redis.NewClient(&redis.Options{
-		Addr: mrd.Addr(),
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: miniRedis.Addr(),
 	})
-	defer rese.F0(rdb.Close)
+	defer rese.F0(redisClient.Close)
 
 	// Init shared lock
-	lock := redissuo.NewSuo(rdb, "demo-lock", time.Minute*5)
+	lock := redissuo.NewSuo(redisClient, "demo-lock", time.Minute*5)
 
 	// Get lock
 	ctx := context.Background()
@@ -32,7 +32,7 @@ func main() {
 		panic(err)
 	}
 	if session == nil {
-		fmt.Println("Lock taken - used in different app")
+		fmt.Println("Lock taken - used in different process")
 		return
 	}
 
@@ -50,8 +50,8 @@ func main() {
 	}
 
 	if success {
-		fmt.Println("Lock freed!")
+		fmt.Println("Lock released!")
 	} else {
-		fmt.Println("Lock free failed - might be freed via timeout in different session")
+		fmt.Println("Lock release failed - might be released via timeout in different session")
 	}
 }

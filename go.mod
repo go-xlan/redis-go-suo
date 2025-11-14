@@ -6,12 +6,12 @@ require (
 	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/google/uuid v1.6.0
 	github.com/pkg/errors v0.9.1
-	github.com/redis/go-redis/v9 v9.14.0
+	github.com/redis/go-redis/v9 v9.16.0
 	github.com/stretchr/testify v1.11.1
-	github.com/yyle88/erero v1.0.23
+	github.com/yyle88/erero v1.0.24
 	github.com/yyle88/must v0.0.26
 	github.com/yyle88/rese v0.0.11
-	github.com/yyle88/zaplog v0.0.26
+	github.com/yyle88/zaplog v0.0.27
 	go.uber.org/zap v1.27.0
 )
 
@@ -23,7 +23,7 @@ require (
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	github.com/yyle88/done v1.0.27 // indirect
-	github.com/yyle88/mutexmap v1.0.14 // indirect
+	github.com/yyle88/mutexmap v1.0.15 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -1,13 +1,13 @@
 [![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/go-xlan/redis-go-suo/release.yml?branch=main&label=BUILD)](https://github.com/go-xlan/redis-go-suo/actions/workflows/release.yml?query=branch%3Amain)
 [![GoDoc](https://pkg.go.dev/badge/github.com/go-xlan/redis-go-suo)](https://pkg.go.dev/github.com/go-xlan/redis-go-suo)
 [![Coverage Status](https://img.shields.io/coveralls/github/go-xlan/redis-go-suo/main.svg)](https://coveralls.io/github/go-xlan/redis-go-suo?branch=main)
-[![Supported Go Versions](https://img.shields.io/badge/Go-1.22--1.25-lightgrey.svg)](https://go.dev/)
+[![Supported Go Versions](https://img.shields.io/badge/Go-1.22--1.25-lightgrey.svg)](https://github.com/go-xlan/redis-go-suo)
 [![GitHub Release](https://img.shields.io/github/release/go-xlan/redis-go-suo.svg)](https://github.com/go-xlan/redis-go-suo/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/go-xlan/redis-go-suo)](https://goreportcard.com/report/github.com/go-xlan/redis-go-suo)
 
 # redis-go-suo
 
-Redis distributed lock implementation with Lua scripting to enable atomic operations.
+Redis distributed lock implementation using Lua scripting for atomic operations.
 
 ---
 
@@ -19,12 +19,11 @@ Redis distributed lock implementation with Lua scripting to enable atomic operat
 
 ## Main Features
 
-🔐 **Atomic Lock Operations**: Lua script-based lock acquisition and release to prevent race conditions  
-⚡ **Smart Session Management**: UUID-based session tracking with ownership validation  
-🔄 **Auto Repeat Mechanism**: Built-in repeat logic with progressive backoff in high-contention scenarios  
-🛡️ **Lifecycle Management**: Guaranteed lock cleanup with panic restoration and timeout handling  
-📊 **Flexible Logging**: Pluggable logging interface with custom implementation support  
-🎯 **Two-Part Design**: Core lock operations (`redissuo`) with high-grade enclosure (`redissuorun`)
+🔐 **Atomic Lock Operations**: Lua script-based lock acquisition and release preventing race conditions
+⚡ **Smart Session Management**: UUID-based session tracking with ownership validation
+🔄 **Auto Reattempt Mechanism**: Built-in reattempt approach with progressive backoff in high-contention scenarios
+🛡️ **Lifecycle Management**: Guaranteed lock cleanup with panic handling and timeout management
+📊 **Flexible Logging**: Pluggable logging interface with custom implementation support
 
 ## Installation
 
@@ -52,17 +51,17 @@ import (
 
 func main() {
 	// Start Redis instance to show demo
-	mrd := rese.P1(miniredis.Run())
-	defer mrd.Close()
+	miniRedis := rese.P1(miniredis.Run())
+	defer miniRedis.Close()
 
 	// Setup Redis connection
-	rdb := redis.NewClient(&redis.Options{
-		Addr: mrd.Addr(),
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: miniRedis.Addr(),
 	})
-	defer rese.F0(rdb.Close)
+	defer rese.F0(redisClient.Close)
 
 	// Init shared lock
-	lock := redissuo.NewSuo(rdb, "demo-lock", time.Minute*5)
+	lock := redissuo.NewSuo(redisClient, "demo-lock", time.Minute*5)
 
 	// Get lock
 	ctx := context.Background()
@@ -71,7 +70,7 @@ func main() {
 		panic(err)
 	}
 	if session == nil {
-		fmt.Println("Lock taken - used in different app")
+		fmt.Println("Lock taken - used in different process")
 		return
 	}
 
@@ -89,16 +88,16 @@ func main() {
 	}
 
 	if success {
-		fmt.Println("Lock freed!")
+		fmt.Println("Lock released!")
 	} else {
-		fmt.Println("Lock release failed - might be freed via timeout in different session")
+		fmt.Println("Lock release failed - might be released via timeout in different session")
 	}
 }
 ```
 
 ⬆️ **Source:** [Source](internal/demos/demo1x/main.go)
 
-### High-Grade Enclosure Usage
+### High-Grade API Usage
 
 ```go
 package main
@@ -117,19 +116,19 @@ import (
 
 func main() {
 	// Start Redis instance to show demo
-	mrd := rese.P1(miniredis.Run())
-	defer mrd.Close()
+	miniRedis := rese.P1(miniredis.Run())
+	defer miniRedis.Close()
 
 	// Setup Redis connection
-	rdb := redis.NewClient(&redis.Options{
-		Addr: mrd.Addr(),
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: miniRedis.Addr(),
 	})
-	defer rese.F0(rdb.Close)
+	defer rese.F0(redisClient.Close)
 
 	// Init shared lock
-	lock := redissuo.NewSuo(rdb, "app-lock", time.Minute*2)
+	lock := redissuo.NewSuo(redisClient, "app-lock", time.Minute*2)
 
-	fmt.Println("Beginning top-grade lock action...")
+	fmt.Println("Beginning high-level lock operation...")
 
 	// Run function with auto lock handling
 	err := redissuorun.SuoLockRun(context.Background(), lock, func(ctx context.Context) error {
@@ -169,11 +168,11 @@ The foundation package providing core distributed lock operations:
 
 ### redissuorun Package
 
-High-grade enclosure providing lifecycle management:
+High-grade API providing lifecycle management:
 
-- **`SuoLockRun`**: Execute function within lock boundaries with auto repeat
+- **`SuoLockRun`**: Execute function within lock boundaries with auto reattempt
 - **`SuoLockXqt`**: Extended version with custom logging support
-- **Panic Restoration**: Automatic panic handling and lock cleanup
+- **Panic Handling**: Automatic panic handling and lock cleanup
 - **Context Management**: Timeout and cancellation support
 
 ## Advanced Features
@@ -262,7 +261,7 @@ redis-go-suo/
 ├── redissuo/           # Core lock implementation
 │   ├── redis_suo.go    # Main lock operations
 │   └── redis_suo_test.go
-├── redissuorun/        # High-grade enclosure
+├── redissuorun/        # High-grade API
 │   ├── redis_suo_run.go # Lifecycle management
 │   └── redis_suo_run_test.go
 └── internal/           # Private utilities
@@ -308,8 +307,8 @@ err := redissuorun.SuoLockXqt(ctx, lock, businessFunc, retryInterval, customLogg
 
 **Handle lock acquisition timeout:**
 ```go
-ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-defer cancel()
+ctx, can := context.WithTimeout(context.Background(), time.Second*10)
+defer can()
 
 session, err := lock.Acquire(ctx)
 if err != nil {
@@ -339,8 +338,8 @@ defer func() {
 1. **Always Release Locks**: Use defer with guaranteed cleanup mechanisms
 2. **Handle Lock Failures**: Check session state and handle as needed  
 3. **Set Appropriate TTLs**: Balance between protection and performance
-4. **Use Repeat Logic**: Implement backoff strategies in high-contention scenarios
-5. **Watch Lock Usage**: Implement logging and metrics in production systems
+4. **Use Retry Logic**: Implement backoff strategies in high-contention scenarios
+5. **Monitor Lock Usage**: Implement logging and metrics in production systems
 
 <!-- TEMPLATE (EN) BEGIN: STANDARD PROJECT FOOTER -->
 <!-- VERSION 2025-09-06 04:53:24.895249 +0000 UTC -->

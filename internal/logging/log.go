@@ -13,10 +13,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// Logger defines the interface of lock operation logging
+// Logger defines the interface for lock operation logging
 // Provides structured logging methods with field support
 // Enables custom implementations across different logging backends
-// Supports both debug and mistake-grade logging in lock operations
+// Supports both debug and error-level logging in lock operations
 //
 // Logger 定义锁操作日志记录的接口
 // 提供带字段支持的结构化日志方法
@@ -60,7 +60,7 @@ func NewZapLogger(logger *zap.Logger) Logger {
 	}
 }
 
-// DebugLog logs debug-grade messages with structured fields
+// DebugLog logs debug-level messages with structured fields
 // Used to show detailed operation info during development
 //
 // DebugLog 记录带结构化字段的调试级别消息
@@ -69,8 +69,8 @@ func (l *zapLogger) DebugLog(msg string, fields ...zap.Field) {
 	l.logger.Debug(msg, fields...)
 }
 
-// ErrorLog logs mistake-grade messages with structured fields
-// Used when operation mistakes require attention
+// ErrorLog logs error-level messages with structured fields
+// Used when operation errors require attention
 //
 // ErrorLog 记录带结构化字段的错误级别消息
 // 用于需要关注的操作错误
@@ -80,7 +80,7 @@ func (l *zapLogger) ErrorLog(msg string, fields ...zap.Field) {
 
 // WithMeta creates a new logger with additional context fields
 // Returns a new Logger instance with fields applied to all messages
-// Convenient when adding operation context like lock keys and session IDs
+// Convenient for adding operation context like lock keys and session IDs
 //
 // WithMeta 创建带附加上下文字段的新日志记录器
 // 返回将字段应用于所有消息的新 Logger 实例
@@ -102,7 +102,7 @@ type NopLogger struct{}
 
 // NewNopLogger creates a logger that discards all messages
 // Returns a Logger that performs no logging operations
-// Convenient when tests need no logging and when logging should be disabled
+// Convenient for tests or when logging should be disabled
 //
 // NewNopLogger 创建一个丢弃所有消息的日志记录器
 // 返回不执行日志操作的 Logger

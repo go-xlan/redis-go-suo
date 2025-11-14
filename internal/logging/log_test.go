@@ -1,3 +1,10 @@
+// Package logging_test provides comprehensive testing for the logging interface abstraction
+// Tests cover zap-based logger creation, custom logger implementation, and metadata attachment
+// Validates the pluggable logging interface used throughout distributed lock operations
+//
+// logging_test 为日志接口抽象提供全面的测试
+// 测试涵盖基于 zap 的日志记录器创建、自定义日志实现和元数据附加
+// 验证在整个分布式锁操作中使用的可插拔日志接口
 package logging_test
 
 import (

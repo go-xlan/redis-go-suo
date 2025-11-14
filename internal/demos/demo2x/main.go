@@ -14,19 +14,19 @@ import (
 
 func main() {
 	// Start Redis instance to show demo
-	mrd := rese.P1(miniredis.Run())
-	defer mrd.Close()
+	miniRedis := rese.P1(miniredis.Run())
+	defer miniRedis.Close()
 
 	// Setup Redis connection
-	rdb := redis.NewClient(&redis.Options{
-		Addr: mrd.Addr(),
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: miniRedis.Addr(),
 	})
-	defer rese.F0(rdb.Close)
+	defer rese.F0(redisClient.Close)
 
 	// Init shared lock
-	lock := redissuo.NewSuo(rdb, "app-lock", time.Minute*2)
+	lock := redissuo.NewSuo(redisClient, "app-lock", time.Minute*2)
 
-	fmt.Println("Beginning top-grade lock action...")
+	fmt.Println("Beginning high-level lock operation...")
 
 	// Run function with auto lock handling
 	err := redissuorun.SuoLockRun(context.Background(), lock, func(ctx context.Context) error {
